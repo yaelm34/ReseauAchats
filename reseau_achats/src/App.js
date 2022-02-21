@@ -1,5 +1,8 @@
 import logo from './logo.svg';
 import './App.css';
+import Neo4j from './Neo4j';
+
+var Neo4jInstance = new Neo4j();
 
 function App() {
   return (
@@ -15,7 +18,7 @@ function App() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Learn React
+         
         </a>
       </header>
     </div>
