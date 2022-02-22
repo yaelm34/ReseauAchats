@@ -15,23 +15,28 @@ export default class Neo4j{
     }
    
 
-    getInfluenceurProducts(influenceurId){
+    async getInfluenceurProducts(influenceurId){
         session = this.driver.session()
-
-        session
+        var records=null;
+        await session
   .run('match (i:Utilisateur {id:$nameParam})<-[:suit]-(:Utilisateur)-[r:achete]->(p:Produit) return p.id as product_id, p.nom as nom_produit, p.description as description_produit,  count(r) as nb_achats ORDER BY nb_achats DESC', {
     nameParam: influenceurId
   })
   .then(result => {
     result.records.forEach(record => {
       console.log(record)
+      records = result.records;
     })
   })
   .catch(error => {
     console.log(error)
   })
   .then(() => session.close())
-  return "fait";
+    
+  return records;
+
+
+
     }
 
     
