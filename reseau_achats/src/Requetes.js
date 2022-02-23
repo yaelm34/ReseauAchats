@@ -49,8 +49,10 @@ export default class Queries extends React.Component {
         };
 
             this.req1ID = "";
+            this.req1NOSQLNiveau="";
             this.req2ID = "";
             this.req2ProductId = "";
+            this.req2NOSQLNiveau="";
             this.req3ID="";
     }
 
@@ -84,11 +86,23 @@ export default class Queries extends React.Component {
             alert("Veuillez saisir un id influenceur pour lancer la requête");
             return;
         }
+
+        if(this.req1NOSQLNiveau==""){
+            alert("Veuillez spécifier un niveau de relation");
+            return;
+        }
+
+        var niveau = "";
+
+        for(let i=0;i<this.req1NOSQLNiveau;i++){
+            niveau +="<-[:suit]-(:Utilisateur)";
+        }
+
         this.setState({...this.state,loadingReq1NOSQL:true});
         var session = this.driver.session()
         var t1 = new Date();
         await session
-        .run('match (i:Utilisateur {id:$nameParam})<-[:suit]-(:Utilisateur)-[r:achete]->(p:Produit) return p.id as product_id, p.nom as nom_produit, p.description as description_produit,  count(r) as nb_achats ORDER BY nb_achats DESC LIMIT 100', {
+        .run('match (i:Utilisateur {id:$nameParam})' + niveau + '-[r:achete]->(p:Produit) return p.id as product_id, p.nom as nom_produit, p.description as description_produit,  count(r) as nb_achats ORDER BY nb_achats DESC LIMIT 100', {
           nameParam:  parseInt(this.req1ID)
         })
         .then(result => {
@@ -137,11 +151,23 @@ export default class Queries extends React.Component {
             alert("Veuillez saisir un id de produit pour pour lancer la requête");
             return;
         }
+
+        if(this.req2NOSQLNiveau==""){
+            alert("Veuillez spécifier un niveau de relation");
+            return;
+        }
+
+        var niveau = "";
+
+        for(let i=0;i<this.req2NOSQLNiveau;i++){
+            niveau +="<-[:suit]-(:Utilisateur)";
+        }
+
         this.setState({...this.state,loadingReq2NOSQL:true});
         var session = this.driver.session()
         var t1 = new Date();
         await session
-        .run('match (i:Utilisateur {id:$nameParam})<-[:suit]-(:Utilisateur)-[r:achete]->(p:Produit {id:$idProduit}) return p.id as product_id, p.nom as nom_produit, p.description as description_produit,  count(r) as nb_achats ORDER BY nb_achats DESC LIMIT 100', {
+        .run('match (i:Utilisateur {id:$nameParam})'+niveau+'-[r:achete]->(p:Produit {id:$idProduit}) return p.id as product_id, p.nom as nom_produit, p.description as description_produit,  count(r) as nb_achats ORDER BY nb_achats DESC LIMIT 100', {
           nameParam:  parseInt(this.req2ID),
           idProduit: parseInt(this.req2ProductId)
         })
@@ -178,7 +204,7 @@ export default class Queries extends React.Component {
     }
 
 
-
+    
     async Req3NOSQL(){
         
         if(this.req3ID==""){
@@ -216,8 +242,7 @@ export default class Queries extends React.Component {
         })
         .then(() => session.close())    
       
-        
-        
+      
        // var res = await Neo4jInstance.getInfluenceurProducts(parseInt(986));
         var t2 = new Date();
         var dif = t1.getTime() - t2.getTime();
@@ -234,6 +259,14 @@ export default class Queries extends React.Component {
         this.req1ID =val;
     }
 
+    updateReq1Niveau(val){
+        this.req1NOSQLNiveau=val;
+    }
+
+    updateReq2Niveau(val){
+        this.req2NOSQLNiveau=val;
+    }
+
     updateReq2id(val){
         this.req2ID =val;   
     }
@@ -245,6 +278,8 @@ export default class Queries extends React.Component {
     updateReq2Productid(val){
         this.req2ProductId=val;
     }
+
+
 
 
     render() {
@@ -276,8 +311,10 @@ export default class Queries extends React.Component {
         <h1> NoSQL</h1>
 
         <div style={{display:"flex",flexDirection:"column",margin:"60px"}}>
-            <a>Requête 1: liste des produits les plus commandés par les followers d'un individu (NIVEAU 1)</a>
+            <a>Requête 1: liste des produits les plus commandés par les followers d'un individu (NIVEAU N)</a>
+            
             <input  onChange={v=>this.updateReq1id(v.target.value)} placeholder="id de l'individu (ex:986)"></input>
+            <input  onChange={v=>this.updateReq1Niveau(v.target.value)} placeholder="Niveau de relation (ex:1)"></input>
             <Button onClick={()=>this.Req1NOSQL()}>Lancer la requête 1</Button>
             <a>{this.state.loadingReq1NOSQL && "Chargement"}</a>
             <a>{this.state.timeReq1NOSQL && <h2>{"Temps de la requête " + this.state.timeReq1NOSQL + " s"}</h2>}</a> 
@@ -294,9 +331,10 @@ export default class Queries extends React.Component {
         </div>
 
         <div style={{display:"flex",flexDirection:"column",margin:"60px"}}>
-            <a>Requête 2: commandes pour un individu et un produit donnés (NIVEAU )</a>
+            <a>Requête 2: commandes pour un individu et un produit donnés (NIVEAU N)</a>
             <input  onChange={v=>this.updateReq2id(v.target.value)} placeholder="id de l'individu (ex:986)"></input>
             <input  onChange={v=>this.updateReq2Productid(v.target.value)} placeholder="id du produit (ex:56)"></input>
+            <input  onChange={v=>this.updateReq2Niveau(v.target.value)} placeholder="Niveau de relation (ex:1)"></input>
             <Button onClick={()=>this.Req2NOSQL()}>Lancer la requête 2</Button>
             <a>{this.state.loadingReq2NOSQL && "Chargement"}</a>
             <h2>{this.state.timeReq2NOSQL && "Temps de la requête " + this.state.timeReq2NOSQL + " s"}</h2>   
@@ -315,6 +353,7 @@ export default class Queries extends React.Component {
         <div style={{display:"flex",flexDirection:"column"}}>
             <a>Requête 3: recherche de produit viral</a>
             <input  onChange={v=>this.updateReq3id(v.target.value)} placeholder="id du produit(ex:56)"></input>
+            <input  onChange={v=>this.updateReq3id(v.target.value)} placeholder="niveau (ex:1)"></input>
 
             <Button onClick={()=>this.Req3NOSQL()}>Requête 3</Button>
             <a>{this.state.loadingReq3NOSQL && "Chargement"}</a>
